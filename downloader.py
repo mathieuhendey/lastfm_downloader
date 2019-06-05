@@ -6,7 +6,7 @@ import pandas as pd
 lastfm_api_key = None  # Generate your own at https://www.last.fm/api/account/create
 lastfm_user_name = None  # Provide your own or someone else's user name
 
-if lastfm_user_name is None and lastfm_api_key is None:
+if lastfm_user_name is None or lastfm_api_key is None:
     print('''
     You need to generate some creds, see the source code
     ''')
@@ -77,7 +77,7 @@ def get_scrobbles(method='recenttracks', username=lastfm_user_name, key=lastfm_a
     return df
 
 
-scrobbles = get_scrobbles(pages=3)  # Default to all Scrobbles
+scrobbles = get_scrobbles(pages=0)  # Default to all Scrobbles
 scrobbles.to_csv('data/lastfm_scrobbles.csv', index=1, encoding='utf-8')
 print('{:,} total rows'.format(len(scrobbles)))
 scrobbles.head()
