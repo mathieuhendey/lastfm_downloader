@@ -1,39 +1,42 @@
-import requests
 import time
+
 import pandas as pd
-import json
+import requests
 
-lastfm_api_key = None  # Generate your own at https://www.last.fm/api/account/create
-lastfm_user_name = None  # Provide your own or someone else's user name
+# Generate your own at https://www.last.fm/api/account/create
+LASTFM_API_KEY = None
+LASTFM_USER_NAME = "Mathieuhendey"
+TEXT = "#text"
+TIME_BETWEEN_REQUESTS = 0.1
+ESTIMATED_TIME_FOR_PROCESSING_PAGE = 2500
 
-if lastfm_user_name is None or lastfm_api_key is None:
+if LASTFM_USER_NAME is None or LASTFM_API_KEY is None:
     print(
         """
-    You need to generate some creds, see the source code
-    """
+        You need to generate some credentials, see the source code
+        """
     )
-
-time_between_requests = 0.1
 
 
 def get_scrobbles(
-    method="recenttracks",
-    username=lastfm_user_name,
-    key=lastfm_api_key,
-    limit=200,
-    extended=0,
-    page=1,
-    pages=0,
+        endpoint="recenttracks",
+        username=LASTFM_USER_NAME,
+        key=LASTFM_API_KEY,
+        limit=200,
+        extended=0,
+        page=1,
+        pages=0,
 ):
     """
-    method: api method
-    username/key: api credentials
-    limit: api lets you retrieve up to 200 records per call
-    extended: api lets you retrieve extended data for each track, 0=no, 1=yes
-    page: page of results to start retrieving at
-    pages: how many pages of results to retrieve. if 0, get as many as api can return.
+    endpoint: API endpoint.
+    username: Last.fm username to fetch scrobbles for.
+    key: API key.
+    limit: The number of records per page. Maximum is 200.
+    extended: Extended results from API, such as whether user has "liked" the track.
+    page: First page to retrieve.
+    pages: How many pages of results after "page" argument to retrieve. If 0, get all pages.
     """
-    # initialize url and lists to contain response fields
+    # initialize URL and lists to contain response fields
     url = (
         "https://ws.audioscrobbler.com/2.0/?method=user.get{}"
         "&user={}"
@@ -45,9 +48,9 @@ def get_scrobbles(
     )
 
     # make first request, just to get the total number of pages
-    request_url = url.format(method, username, key, limit, extended, page)
+    request_url = url.format(endpoint, username, key, limit, extended, page)
     response = requests.get(request_url).json()
-    total_pages = int(response[method]["@attr"]["totalPages"])
+    total_pages = int(response[endpoint]["@attr"]["totalPages"])
     if pages > 0:
         total_pages = min([total_pages, pages])
 
@@ -61,38 +64,49 @@ def get_scrobbles(
     # request each page of data one at a time
     for page in range(1, int(total_pages) + 1, 1):
         print(
-            "\rPage: {}. Estimated time remaining: {} seconds.".format(
-                page, 2.5 * int(total_pages - page)
-            ),
-            end="",
+            "\rPage: {}. Estimated time remaining: {}.".format(
+                page,
+                get_time_remaining(int(total_pages - page)),
+                end="",
+            )
         )
-        time.sleep(time_between_requests)
-        request_url = url.format(method, username, key, limit, extended, page)
+        time.sleep(TIME_BETWEEN_REQUESTS)
+        request_url = url.format(endpoint, username, key, limit, extended, page)
         response = requests.get(request_url)
-        if method in response.json():
-            response_json = response.json()[method]["track"]
-            for track in response_json:
-                if "@attr" not in track:
-                    artist_names.append(track["artist"]["#text"])
-                    album_names.append(track["album"]["#text"])
-                    track_names.append(track["name"])
-                    timestamps.append(track["date"]["uts"])
+        if endpoint in response.json():
+            response_json = response.json()[endpoint]["track"]
+        for track in response_json:
+            if "@attr" not in track:
+                artist_names.append(track["artist"][TEXT])
+                album_names.append(track["album"][TEXT])
+                track_names.append(track["name"])
+                timestamps.append(track["date"]["uts"])
 
-            del response
+        del response
 
-    # create and populate a dataframe to contain the data
-    df = pd.DataFrame()
-    df["artist"] = artist_names
-    df["album"] = album_names
-    df["track"] = track_names
-    df["timestamp"] = timestamps
-    # In UTC. Last.fm returns datetimes in the user's locale when they listened
-    df["datetime"] = pd.to_datetime(df["timestamp"].astype(int), unit="s")
+        # create and populate a dataframe to contain the data
+        df = pd.DataFrame()
+        df["artist"] = artist_names
+        df["album"] = album_names
+        df["track"] = track_names
+        df["timestamp"] = timestamps
+        # In UTC. Last.fm returns datetimes in the user's locale when they listened
+        df["datetime"] = pd.to_datetime(df["timestamp"].astype(int), unit="s")
 
     return df
 
 
+def get_time_remaining(pages_remaining):
+    """Calculate the estimated time remaining."""
+    millis_remaining = int(pages_remaining * ESTIMATED_TIME_FOR_PROCESSING_PAGE)
+    seconds_remaining = (millis_remaining / 1000) % 60
+    seconds_remaining = int(seconds_remaining)
+    minutes_remaining = (millis_remaining / (1000 * 60)) % 60
+    minutes_remaining = int(minutes_remaining)
+    return "{}m{}s".format(minutes_remaining, seconds_remaining)
+
+
 scrobbles = get_scrobbles(page=1, pages=0)  # Default to all Scrobbles
-scrobbles.to_csv("./data/lastfm_scrobbles.csv", index=1, encoding="utf-8")
+scrobbles.to_csv("./data/lastfm_scrobbles.csv", index=False, encoding="utf-8")
 print("{:,} total rows".format(len(scrobbles)))
 scrobbles.head()
