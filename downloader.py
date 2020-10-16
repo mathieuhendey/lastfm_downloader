@@ -53,22 +53,24 @@ def get_scrobbles(
 
     print("Total pages to retrieve: {}".format(total_pages))
 
+    artist_names = []
+    album_names = []
+    track_names = []
+    timestamps = []
+
     # request each page of data one at a time
     for page in range(1, int(total_pages) + 1, 1):
         print(
             "\rPage: {}. Estimated time remaining: {} seconds.".format(
                 page, 2.5 * int(total_pages - page)
-            ), end=""
+            ),
+            end="",
         )
         time.sleep(time_between_requests)
         request_url = url.format(method, username, key, limit, extended, page)
         response = requests.get(request_url)
         if method in response.json():
             response_json = response.json()[method]["track"]
-            artist_names = []
-            album_names = []
-            track_names = []
-            timestamps = []
             for track in response_json:
                 if "@attr" not in track:
                     artist_names.append(track["artist"]["#text"])
