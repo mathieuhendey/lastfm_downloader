@@ -1,10 +1,10 @@
 import requests
 import time
 import pandas as pd
-
+import json
 
 lastfm_api_key = None  # Generate your own at https://www.last.fm/api/account/create
-lastfm_user_name = "Mathieuhendey"  # Provide your own or someone else's user name
+lastfm_user_name = None  # Provide your own or someone else's user name
 
 if lastfm_user_name is None or lastfm_api_key is None:
     print(
@@ -13,7 +13,7 @@ if lastfm_user_name is None or lastfm_api_key is None:
     """
     )
 
-time_between_requests = 0.2
+time_between_requests = 0.1
 
 
 def get_scrobbles(
@@ -43,11 +43,6 @@ def get_scrobbles(
         "&page={}"
         "&format=json"
     )
-    responses = []
-    artist_names = []
-    album_names = []
-    track_names = []
-    timestamps = []  # in UTC
 
     # make first request, just to get the total number of pages
     request_url = url.format(method, username, key, limit, extended, page)
@@ -60,21 +55,27 @@ def get_scrobbles(
 
     # request each page of data one at a time
     for page in range(1, int(total_pages) + 1, 1):
-        print("Page: {}".format(page))
+        print(
+            "\rPage: {}. Estimated time remaining: {} seconds.".format(
+                page, 2.5 * int(total_pages - page)
+            ), end=""
+        )
         time.sleep(time_between_requests)
         request_url = url.format(method, username, key, limit, extended, page)
-        responses.append(requests.get(request_url))
+        response = requests.get(request_url)
+        response_json = response.json()[method]["track"]
+        artist_names = []
+        album_names = []
+        track_names = []
+        timestamps = []
+        for track in response_json:
+            if "@attr" not in track:
+                artist_names.append(track["artist"]["#text"])
+                album_names.append(track["album"]["#text"])
+                track_names.append(track["name"])
+                timestamps.append(track["date"]["uts"])
 
-    # parse the fields out of each scrobble in each page (aka response) of scrobbles
-    for response in responses:
-        scrobbles = response.json()
-        for scrobble in scrobbles[method]["track"]:
-            # only retain completed scrobbles (aka, with timestamp and not 'now playing')
-            if "date" in scrobble.keys():
-                artist_names.append(scrobble["artist"]["#text"])
-                album_names.append(scrobble["album"]["#text"])
-                track_names.append(scrobble["name"])
-                timestamps.append(scrobble["date"]["uts"])
+        del response
 
     # create and populate a dataframe to contain the data
     df = pd.DataFrame()
@@ -88,7 +89,7 @@ def get_scrobbles(
     return df
 
 
-scrobbles = get_scrobbles(pages=0)  # Default to all Scrobbles
+scrobbles = get_scrobbles(page=1, pages=0)  # Default to all Scrobbles
 scrobbles.to_csv("./data/lastfm_scrobbles.csv", index=1, encoding="utf-8")
 print("{:,} total rows".format(len(scrobbles)))
 scrobbles.head()
