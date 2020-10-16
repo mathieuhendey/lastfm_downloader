@@ -63,19 +63,20 @@ def get_scrobbles(
         time.sleep(time_between_requests)
         request_url = url.format(method, username, key, limit, extended, page)
         response = requests.get(request_url)
-        response_json = response.json()[method]["track"]
-        artist_names = []
-        album_names = []
-        track_names = []
-        timestamps = []
-        for track in response_json:
-            if "@attr" not in track:
-                artist_names.append(track["artist"]["#text"])
-                album_names.append(track["album"]["#text"])
-                track_names.append(track["name"])
-                timestamps.append(track["date"]["uts"])
+        if method in response.json():
+            response_json = response.json()[method]["track"]
+            artist_names = []
+            album_names = []
+            track_names = []
+            timestamps = []
+            for track in response_json:
+                if "@attr" not in track:
+                    artist_names.append(track["artist"]["#text"])
+                    album_names.append(track["album"]["#text"])
+                    track_names.append(track["name"])
+                    timestamps.append(track["date"]["uts"])
 
-        del response
+            del response
 
     # create and populate a dataframe to contain the data
     df = pd.DataFrame()
