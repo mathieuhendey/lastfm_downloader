@@ -87,9 +87,8 @@ def get_scrobbles(
         df["artist"] = artist_names
         df["album"] = album_names
         df["track"] = track_names
-        df["timestamp"] = timestamps
         # In UTC. Last.fm returns datetimes in the user's locale when they listened
-        df["datetime"] = pd.to_datetime(df["timestamp"].astype(int), unit="s")
+        df["datetime"] = pd.to_datetime(timestamps, unit="s")
 
     return df
 

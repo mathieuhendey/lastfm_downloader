@@ -19,7 +19,7 @@ def load_and_arrange_data_frame():
             """)
         sys.exit(1)
 
-    dataframe = dataframe.drop(['album', 'track', 'timestamp', 'datetime'], axis=1)
+    dataframe = dataframe.drop(['album', 'track', 'datetime'], axis=1)
     dataframe['scrobbles'] = dataframe.groupby('artist')['artist'].transform('count')
     dataframe = dataframe.drop_duplicates()
     return dataframe.sort_values(by='scrobbles', ascending=False)
