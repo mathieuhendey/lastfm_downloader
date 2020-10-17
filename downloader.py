@@ -64,11 +64,10 @@ def get_scrobbles(
     # request each page of data one at a time
     for page in range(1, int(total_pages) + 1, 1):
         print(
-            "\rPage: {}. Estimated time remaining: {}.".format(
+            "\rPage: {}. Estimated time remaining: {}".format(
                 page,
                 get_time_remaining(int(total_pages - page)),
-                end=""
-            )
+            ), end=""
         )
         request_url = url.format(endpoint, username, key, limit, extended, page)
         response = requests.get(request_url)
@@ -102,7 +101,7 @@ def get_time_remaining(pages_remaining):
     seconds_remaining = int(seconds_remaining)
     minutes_remaining = (millis_remaining / (1000 * 60)) % 60
     minutes_remaining = int(minutes_remaining)
-    return "{}m{}s".format(minutes_remaining, seconds_remaining)
+    return "{}m{:2}s".format(minutes_remaining, seconds_remaining)
 
 
 scrobbles = get_scrobbles(page=1, pages=0)  # Default to all Scrobbles
