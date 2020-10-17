@@ -1,4 +1,4 @@
-import time
+import sys
 
 import pandas as pd
 import requests
@@ -7,7 +7,6 @@ import requests
 LASTFM_API_KEY = None
 LASTFM_USER_NAME = "Mathieuhendey"
 TEXT = "#text"
-TIME_BETWEEN_REQUESTS = 0.1
 ESTIMATED_TIME_FOR_PROCESSING_PAGE = 2500
 
 if LASTFM_USER_NAME is None or LASTFM_API_KEY is None:
@@ -16,6 +15,7 @@ if LASTFM_USER_NAME is None or LASTFM_API_KEY is None:
         You need to generate some credentials, see the source code
         """
     )
+    sys.exit(1)
 
 
 def get_scrobbles(
@@ -67,10 +67,9 @@ def get_scrobbles(
             "\rPage: {}. Estimated time remaining: {}.".format(
                 page,
                 get_time_remaining(int(total_pages - page)),
-                end="",
+                end=""
             )
         )
-        time.sleep(TIME_BETWEEN_REQUESTS)
         request_url = url.format(endpoint, username, key, limit, extended, page)
         response = requests.get(request_url)
         if endpoint in response.json():
