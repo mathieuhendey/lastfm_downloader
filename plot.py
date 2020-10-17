@@ -1,12 +1,24 @@
+import sys
+
 import matplotlib.pyplot as plt
 import pandas as pd
 
 
-def arrange_data_frame(dataframe=pd.read_csv("data/lastfm_scrobbles.csv")):
+def load_and_arrange_data_frame():
     """Get the the artist out of the dataframe and drop other columns.
 
     Relies on you having run downloader.py first to populate the CSV.
     """
+    try:
+        dataframe = pd.read_csv("data/lastfm_scrobbles.csv")
+    except FileNotFoundError:
+        print(
+            """
+            data/lastfm_scrobbles.csv not found.
+            Make sure you run downloader.py before running this script.
+            """)
+        sys.exit(1)
+
     dataframe = dataframe.drop(['album', 'track', 'timestamp', 'datetime'], axis=1)
     dataframe['scrobbles'] = dataframe.groupby('artist')['artist'].transform('count')
     dataframe = dataframe.drop_duplicates()
@@ -36,7 +48,7 @@ def get_plot(dataframe):
     return plt
 
 
-arranged_dataframe = arrange_data_frame()
+arranged_dataframe = load_and_arrange_data_frame()
 plot = get_plot(arranged_dataframe)
 
 # Save plot to ./chart.png
