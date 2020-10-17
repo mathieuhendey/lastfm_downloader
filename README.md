@@ -1,5 +1,7 @@
 # A tool to create a CSV of all your last.fm scrobbles ever
 
+https://mathieuhendey.com/2020/10/download-all-your-historical-last.fm-data/
+
 The last.fm only lets you generate reports up to a year back, this tool will let
 you download *all* your scrobbles in a CSV format with the artist, song, and the
 timestamp.
