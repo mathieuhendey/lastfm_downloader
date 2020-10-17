@@ -9,10 +9,14 @@ timestamp.
 From here you can do cool things like plot your top 20 artists on a graph using `plot.py`.
 **Make sure you've run `downloader.py` first, or you won't have any data to plot!**
 
+
+![scrobbles plot](https://mathieuhendey.com/img/top_scrobbles.png)
+
 Or see how many times you've listened to a specific song:
 
 ```bash
-rg "Little Wing" data/lastfm_scrobbles.csv | wc -l
+rg "little wing" data/lastfm_scrobbles.csv| wc -l
+      33
 ```
 
 Read the source code for `downloader.py`, it has some information about setting
