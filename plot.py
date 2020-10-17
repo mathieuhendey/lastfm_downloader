@@ -41,3 +41,4 @@ plot = get_plot(arranged_dataframe)
 
 # Save plot to ./chart.png
 plt.savefig("chart.png", dpi=500)
+print("Saved chart to ./chart.png.")

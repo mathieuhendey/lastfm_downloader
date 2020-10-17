@@ -7,7 +7,7 @@ you download *all* your scrobbles in a CSV format with the artist, song, and the
 timestamp.
 
 From here you can do cool things like plot your top 20 artists on a graph using `plot.py`.
-**Make sure you've run `downloader.py` first or you won't have any data to plot!**
+**Make sure you've run `downloader.py` first, or you won't have any data to plot!**
 
 Or see how many times you've listened to a specific song:
 
