@@ -2,3 +2,4 @@ pandas~=0.25.2
 requests~=2.22.0
 
 matplotlib~=3.3.2
+requests_toolbelt

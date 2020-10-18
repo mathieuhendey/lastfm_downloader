@@ -2,12 +2,15 @@ import sys
 
 import pandas as pd
 import requests
+import pprint
+from requests_toolbelt.threaded import pool
 
 # Generate your own at https://www.last.fm/api/account/create
 LASTFM_API_KEY = None
 LASTFM_USER_NAME = "Mathieuhendey"
 TEXT = "#text"
-ESTIMATED_TIME_FOR_PROCESSING_PAGE = 2500
+ESTIMATED_TIME_FOR_PROCESSING_PAGE = 352
+ESTIMATED_TIME_FOR_PROCESSING_DATAFRAME_PER_PAGE_OF_RESULTS = 250
 
 if LASTFM_USER_NAME is None or LASTFM_API_KEY is None:
     print(
@@ -16,6 +19,22 @@ if LASTFM_USER_NAME is None or LASTFM_API_KEY is None:
         """
     )
     sys.exit(1)
+
+
+def get_top_tags(
+    endpoint="info",
+    username=LASTFM_USER_NAME,
+    key=LASTFM_API_KEY,
+):
+    url = (
+        "https://ws.audioscrobbler.com/2.0/?method=User.get{}"
+        "&user={}"
+        "&api_key={}"
+        "&format=json"
+    )
+    request_url = url.format(endpoint, username, key)
+    response = requests.get(request_url).json()
+    pprint.pprint(response)
 
 
 def get_scrobbles(
@@ -47,31 +66,31 @@ def get_scrobbles(
         "&format=json"
     )
 
-    # make first request, just to get the total number of pages
+    # get total number of pages
     request_url = url.format(endpoint, username, key, limit, extended, page)
     response = requests.get(request_url).json()
     total_pages = int(response[endpoint]["@attr"]["totalPages"])
     if pages > 0:
         total_pages = min([total_pages, pages])
 
-    print("Total pages to retrieve: {}".format(total_pages))
+    print(
+        "Total pages to retrieve: {}. Estimated time: {}".format(
+            total_pages, get_time_remaining(total_pages)
+        )
+    )
 
     artist_names = []
     album_names = []
     track_names = []
     timestamps = []
-
-    # request each page of data one at a time
+    urls = []
+    # add formatted URLs to list to be requested in thread pool
     for page in range(1, int(total_pages) + 1, 1):
-        print(
-            "\rPage: {}. Estimated time remaining: {}".format(
-                page,
-                get_time_remaining(int(total_pages - page)),
-            ),
-            end="",
-        )
-        request_url = url.format(endpoint, username, key, limit, extended, page)
-        response = requests.get(request_url)
+        urls.append(url.format(endpoint, username, key, limit, extended, page))
+    p = pool.Pool.from_urls(urls)
+    p.join_all()
+
+    for response in p.responses():
         if endpoint in response.json():
             response_json = response.json()[endpoint]["track"]
             for track in response_json:
@@ -81,8 +100,6 @@ def get_scrobbles(
                     track_names.append(track["name"])
                     timestamps.append(track["date"]["uts"])
 
-        del response
-
     # create and populate a dataframe to contain the data
     df = pd.DataFrame()
     df["artist"] = artist_names
@@ -90,13 +107,19 @@ def get_scrobbles(
     df["track"] = track_names
     # In UTC. Last.fm returns datetimes in the user's locale when they listened
     df["datetime"] = pd.to_datetime(timestamps, unit="s")
-
+    df.sort_values("datetime")
     return df
 
 
 def get_time_remaining(pages_remaining):
     """Calculate the estimated time remaining."""
-    millis_remaining = int(pages_remaining * ESTIMATED_TIME_FOR_PROCESSING_PAGE)
+    millis_remaining = int(
+        (pages_remaining * ESTIMATED_TIME_FOR_PROCESSING_PAGE)
+        + (
+            pages_remaining
+            * ESTIMATED_TIME_FOR_PROCESSING_DATAFRAME_PER_PAGE_OF_RESULTS
+        )
+    )
     seconds_remaining = (millis_remaining / 1000) % 60
     seconds_remaining = int(seconds_remaining)
     minutes_remaining = (millis_remaining / (1000 * 60)) % 60
