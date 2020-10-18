@@ -19,13 +19,13 @@ if LASTFM_USER_NAME is None or LASTFM_API_KEY is None:
 
 
 def get_scrobbles(
-        endpoint="recenttracks",
-        username=LASTFM_USER_NAME,
-        key=LASTFM_API_KEY,
-        limit=200,
-        extended=0,
-        page=1,
-        pages=0,
+    endpoint="recenttracks",
+    username=LASTFM_USER_NAME,
+    key=LASTFM_API_KEY,
+    limit=200,
+    extended=0,
+    page=1,
+    pages=0,
 ):
     """
     endpoint: API endpoint.
@@ -67,28 +67,29 @@ def get_scrobbles(
             "\rPage: {}. Estimated time remaining: {}".format(
                 page,
                 get_time_remaining(int(total_pages - page)),
-            ), end=""
+            ),
+            end="",
         )
         request_url = url.format(endpoint, username, key, limit, extended, page)
         response = requests.get(request_url)
         if endpoint in response.json():
             response_json = response.json()[endpoint]["track"]
-        for track in response_json:
-            if "@attr" not in track:
-                artist_names.append(track["artist"][TEXT])
-                album_names.append(track["album"][TEXT])
-                track_names.append(track["name"])
-                timestamps.append(track["date"]["uts"])
+            for track in response_json:
+                if "@attr" not in track:
+                    artist_names.append(track["artist"][TEXT])
+                    album_names.append(track["album"][TEXT])
+                    track_names.append(track["name"])
+                    timestamps.append(track["date"]["uts"])
 
         del response
 
-        # create and populate a dataframe to contain the data
-        df = pd.DataFrame()
-        df["artist"] = artist_names
-        df["album"] = album_names
-        df["track"] = track_names
-        # In UTC. Last.fm returns datetimes in the user's locale when they listened
-        df["datetime"] = pd.to_datetime(timestamps, unit="s")
+    # create and populate a dataframe to contain the data
+    df = pd.DataFrame()
+    df["artist"] = artist_names
+    df["album"] = album_names
+    df["track"] = track_names
+    # In UTC. Last.fm returns datetimes in the user's locale when they listened
+    df["datetime"] = pd.to_datetime(timestamps, unit="s")
 
     return df
 

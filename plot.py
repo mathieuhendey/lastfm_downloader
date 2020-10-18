@@ -16,13 +16,14 @@ def load_and_arrange_data_frame():
             """
             data/lastfm_scrobbles.csv not found.
             Make sure you run downloader.py before running this script.
-            """)
+            """
+        )
         sys.exit(1)
 
-    dataframe = dataframe.drop(['album', 'track', 'datetime'], axis=1)
-    dataframe['scrobbles'] = dataframe.groupby('artist')['artist'].transform('count')
+    dataframe = dataframe.drop(["album", "track", "datetime"], axis=1)
+    dataframe["scrobbles"] = dataframe.groupby("artist")["artist"].transform("count")
     dataframe = dataframe.drop_duplicates()
-    return dataframe.sort_values(by='scrobbles', ascending=False)
+    return dataframe.sort_values(by="scrobbles", ascending=False)
 
 
 def get_plot(dataframe):
@@ -36,13 +37,13 @@ def get_plot(dataframe):
     plt.xkcd()
     dataframe = dataframe.iloc[0:20]
     dataframe.plot(x="artist", y="scrobbles", kind="bar")
-    plt.tick_params(axis='x', pad=6)
+    plt.tick_params(axis="x", pad=6)
     plt.margins(0.2)
     plt.xticks(fontsize=8, horizontalalignment="left")
     plt.tight_layout()
     plt.xticks(rotation=-45)
     plt.ylabel("Scrobbles")
-    plt.tick_params(axis='x', which='major', pad=10)
+    plt.tick_params(axis="x", which="major", pad=10)
     plt.subplots_adjust(right=0.9, bottom=0.3)
     plt.tight_layout()
     return plt
