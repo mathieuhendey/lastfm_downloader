@@ -7,10 +7,10 @@ from requests_toolbelt.threaded import pool
 
 # Generate your own at https://www.last.fm/api/account/create
 LASTFM_API_KEY = None
-LASTFM_USER_NAME = "Mathieuhendey"
+LASTFM_USER_NAME = None
 TEXT = "#text"
 ESTIMATED_TIME_FOR_PROCESSING_PAGE = 352
-ESTIMATED_TIME_FOR_PROCESSING_DATAFRAME_PER_PAGE_OF_RESULTS = 250
+ESTIMATED_TIME_FOR_PROCESSING_DATAFRAME_PER_PAGE_OF_RESULTS = 275
 
 if LASTFM_USER_NAME is None or LASTFM_API_KEY is None:
     print(
@@ -19,22 +19,6 @@ if LASTFM_USER_NAME is None or LASTFM_API_KEY is None:
         """
     )
     sys.exit(1)
-
-
-def get_top_tags(
-    endpoint="info",
-    username=LASTFM_USER_NAME,
-    key=LASTFM_API_KEY,
-):
-    url = (
-        "https://ws.audioscrobbler.com/2.0/?method=User.get{}"
-        "&user={}"
-        "&api_key={}"
-        "&format=json"
-    )
-    request_url = url.format(endpoint, username, key)
-    response = requests.get(request_url).json()
-    pprint.pprint(response)
 
 
 def get_scrobbles(
@@ -85,7 +69,7 @@ def get_scrobbles(
     timestamps = []
     urls = []
     # add formatted URLs to list to be requested in thread pool
-    for page in range(1, int(total_pages) + 1, 1):
+    for page in range(0, int(total_pages) + 1, 1):
         urls.append(url.format(endpoint, username, key, limit, extended, page))
     p = pool.Pool.from_urls(urls)
     p.join_all()
@@ -105,9 +89,10 @@ def get_scrobbles(
     df["artist"] = artist_names
     df["album"] = album_names
     df["track"] = track_names
+    df["timestamps"] = timestamps
     # In UTC. Last.fm returns datetimes in the user's locale when they listened
     df["datetime"] = pd.to_datetime(timestamps, unit="s")
-    df.sort_values("datetime")
+    df.sort_values("timestamps", ascending=False, inplace=True)
     return df
 
 
